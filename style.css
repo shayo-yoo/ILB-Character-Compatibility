@@ -212,6 +212,47 @@
   margin: 8px 0;
 }
 
+/* 有关联列表的页签是两段式：上面滚、下面钉。
+   只靠 sticky 不行——列表短的时候它会停在内容末尾、浮在面板中间，
+   所以容器改成 flex 竖排，列表那一块自己撑开并滚动，添加栏是固定的第二段
+   （panel.js 每次渲染前复位 body 的类名）。 */
+.ilbcc-body.ilbcc-has-add-bar {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.ilbcc-bind-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 12px;
+}
+
+.ilbcc-add-bar {
+  flex: 0 0 auto;
+  z-index: 2;
+  margin: 0 -14px;
+  padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--SmartThemeBlurTintColor, #1d1d1f);
+  border-top: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.16));
+  box-shadow: 0 -8px 14px rgba(0, 0, 0, 0.22);
+}
+
+.ilbcc-add-bar .ilbcc-add-row {
+  margin: 0 0 4px;
+}
+
+.ilbcc-add-bar .ilbcc-hint {
+  margin: 0;
+}
+
+.ilbcc-add-bar .ilbcc-select {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
 .ilbcc-check-list {
   display: flex;
   flex-direction: column;
@@ -219,21 +260,38 @@
   margin: 6px 0;
 }
 
+/* 一行：勾选框 / 书名 / 策略说明 / （可选）冲突下拉。
+   用 flex 换行而不是网格：网格在窄屏上只剩两列时，第三、四个孩子会掉进
+   「22px 宽」的第一列，中文就变成一个字一行（v0.1.2 修）。 */
 .ilbcc-check-row {
-  display: grid;
-  grid-template-columns: 22px minmax(120px, 1fr) auto auto;
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   align-items: center;
   padding: 3px 0;
 }
 
+.ilbcc-check-row input[type='checkbox'] {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
 .ilbcc-check-name {
-  word-break: break-all;
+  flex: 1 1 140px;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .ilbcc-check-meta {
+  flex: 0 0 auto;
   opacity: 0.7;
   font-size: 0.86em;
+  white-space: nowrap;
+}
+
+.ilbcc-check-row .ilbcc-select {
+  flex: 0 0 auto;
+  max-width: 46%;
 }
 
 .ilbcc-hint {
@@ -342,12 +400,23 @@
     grid-template-columns: 1fr;
   }
 
-  .ilbcc-check-row {
-    grid-template-columns: 22px 1fr;
-  }
-
   .ilbcc-dialog {
     width: 96vw;
     max-height: 92vh;
+  }
+
+  /* 手机上添加栏占的高度是实打实从列表里扣的：标题压小、说明收起来
+     （三个选项的名字本身已经说清了谁说了算），给书单多留两行。 */
+  .ilbcc-add-bar {
+    padding-top: 8px;
+  }
+
+  .ilbcc-add-bar .ilbcc-section-title {
+    margin: 0 0 4px;
+    font-size: 13px;
+  }
+
+  .ilbcc-add-bar .ilbcc-hint {
+    display: none;
   }
 }

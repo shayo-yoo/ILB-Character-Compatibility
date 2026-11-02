@@ -154,8 +154,10 @@ export function createBindingsView({ app }) {
           }),
         ),
       );
-      root.append(header);
-
+      // 上面这些（当前角色 + 关联列表）放进独立的滚动区，添加栏单独占一块。
+      // v0.1.2：书多的时候列表会把添加栏推到屏幕外，用户得先滚到底才能加关联。
+      // 做法不是给添加栏加 sticky（内容短的时候它会浮在中间），而是让整页变成
+      // 「上面滚动、下面固定」的两段式：列表再长也只在自己的区域里滚。
       const list = el('div', { class: 'ilbcc-section' });
       list.append(el('div', { class: 'ilbcc-section-title', text: `关联的书（${listed.rows.length}）` }));
       if (listed.rows.length === 0) {
@@ -171,9 +173,15 @@ export function createBindingsView({ app }) {
         for (const row of listed.rows) index.set(row.id, row);
         for (const row of listed.rows) list.append(rowView(index, row));
       }
-      root.append(list);
 
-      const add = el('div', { class: 'ilbcc-section' });
+      // 上面这些（当前角色 + 关联列表）放进独立的滚动区，添加栏单独占一块。
+      // v0.1.2：书多的时候列表会把添加栏推到屏幕外，用户得先滚到底才能加关联。
+      // 做法不是给添加栏加 sticky（内容短的时候它会浮在中间），而是让整页变成
+      // 「上面滚动、下面固定」的两段式：列表再长也只在自己的区域里滚。
+      root.append(el('div', { class: 'ilbcc-bind-scroll' }, header, list));
+
+      const add = el('div', { class: 'ilbcc-add-bar' });
+      root.classList.add('ilbcc-has-add-bar');
       add.append(el('div', { class: 'ilbcc-section-title', text: '添加关联' }));
       add.append(bookPicker(books, listed.rows, (bookId, policy) => app.bindings.add({ character, bookId, policy })));
       add.append(hint('「跟随书设置」= 书自己的策略说了算；「强制启用/停用」= 只要这个角色在，就以这里为准。'));

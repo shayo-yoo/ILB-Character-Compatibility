@@ -145,12 +145,21 @@ core/* ──> 无依赖
 逐本 `worldbooks.importBook`（默认 `ask` 由界面决定：skip / overwrite / create / reuse）→
 **有书失败就停** → `cards.importJson`（不传 preserved_name）→ 用新 avatar + 新 book id 建关联 → 校验并报告。
 
-### 7.4 两条界面约定（踩过坑）
+### 7.4 界面约定（踩过坑）
 
 - **`<dialog>` 关闭必须真的不显示**：作者样式里的 `display:flex` 会盖过浏览器对 `dialog:not([open])` 的 `display:none`，
   结果关掉的面板还按普通元素排版、被聊天窗口盖住。`style.css` 里默认 `display:none`，只在 `[open]` 时 `flex`。
 - **不要直接用 `<input type="file">` 当按钮**：酒馆全局样式把它设成 `display:none`，手机上什么都看不到。
   用自绘按钮调 `input.click()`，input 自己隐藏。
+- **常驻操作区用「上面滚、下面钉」的两段式，别指望 `position: sticky`**：sticky 只在内容溢出时贴边，
+  列表短的时候它会停在内容末尾、浮在面板中间；而且它对齐的是内容盒，容器留着 `padding-bottom`
+  就会差出一条缝。现在是 `.ilbcc-body` 变 flex 竖排（`.ilbcc-has-add-bar`），
+  `.ilbcc-bind-scroll` 自己滚（`flex:1 1 auto; min-height:0; overflow:auto`），
+  `.ilbcc-add-bar` 是固定的第二段，底部留 `env(safe-area-inset-bottom)`。
+  类名由 `panel.js` 每次渲染前复位，别的页签不受影响。
+- **清单行不要用固定列数的网格**：`grid-template-columns: 22px 1fr auto auto` 在窄屏被压成两列后，
+  第三、四个孩子会掉进 22px 宽的第一列，中文就一个字一行。改用 `flex` + `flex-wrap`，
+  书名 `flex: 1 1 140px`、说明 `white-space: nowrap`。
 
 ## 8. 扩展点
 

@@ -51,6 +51,9 @@ export function createPanel({ app }) {
       highlight();
       const view = app.views[active];
       clear(body);
+      // 页签可以给自己的容器加类（比如有常驻底栏的页签要去掉下内边距），
+      // 每次渲染前先复位，免得回到别的页签时还留着。
+      body.className = 'ilbcc-body';
       if (!view) {
         body.append(el('p', { class: 'ilbcc-error', text: `没有这个页签：${active}` }));
       } else {

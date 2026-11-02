@@ -18,7 +18,7 @@ import { createBindingsView } from './src/ui/view-bindings.js';
 import { createPackageView } from './src/ui/view-package.js';
 import { createDiagnosticsView } from './src/ui/view-diagnostics.js';
 
-export const VERSION = '0.1.1';
+export const VERSION = '0.1.2';
 const LABEL = 'ILB 角色卡兼容';
 
 function notify(message, kind = 'info') {
