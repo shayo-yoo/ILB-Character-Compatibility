@@ -1,0 +1,11 @@
+{
+  "display_name": "ILB 角色卡兼容",
+  "loading_order": 60,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "shayo-yoo",
+  "version": "0.1.0",
+  "homePage": ""
+}

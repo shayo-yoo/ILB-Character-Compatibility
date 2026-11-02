@@ -1,0 +1,19 @@
+# 依赖与本地环境
+node_modules/
+.env
+.env.*
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 真机探针的截图（每次运行都会覆盖，属于本地验收产物）
+tests/live/last-*.png
+
+# 临时与日志
+tmp-*
+*.log
+.commit-*.txt
