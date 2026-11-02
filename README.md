@@ -17,7 +17,15 @@
 
 ## 安装
 
-把整个目录放进：
+推荐让酒馆自己去拉（手机上也一样）：**扩展 → 安装扩展（Install Extension）**，粘贴
+
+```
+https://github.com/shayo-yoo/ILB-Character-Compatibility
+```
+
+酒馆会把它克隆到自己的扩展目录；以后扩展页里的「更新」按钮就能拉到新版本。
+
+也可以手动把整个目录放进：
 
 ```
 SillyTavern/public/scripts/extensions/third-party/ILB-Character-Compatibility/
@@ -51,12 +59,12 @@ SillyTavern/public/scripts/extensions/third-party/ILB-Character-Compatibility/
 
 书没导完就停，不会导入角色卡（角色卡导进去撤不回来）。结果会逐条列出成功/跳过/失败。
 
-## 已知限制（v0.1.0）
+## 已知限制（v0.1.1）
 
 - **群聊**：群聊里没有"当前角色"，关联页会提示先打开一张角色卡；群聊的关联投票由 ILB 自己按成员算。
 - **只做 ILB 自己的包格式**：不做 PNG 内嵌、不做原生 `character_book` 转换（需求 §7 / §12 的后续阶段）。
 - **角色卡删除不在这里做**：卡归酒馆管；本扩展只在探针里用接口清理测试数据。
-- **手机真机未验证**：布局做了窄屏适配，但没有在手机上实测过。
+- **手机**：0.1.0 在手机上装过、能打开；0.1.1 修的两个问题用无头 Chrome 的 390×844 视口验过，还没在手机真机上复测。
 - **导入的角色卡会不会重名**：不传 `preserved_name`，重名时酒馆自动加后缀，不会覆盖已有卡。
 
 ## 开发

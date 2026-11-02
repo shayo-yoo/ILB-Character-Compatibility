@@ -1,4 +1,4 @@
-// tests/live/st-v01-check.mjs —— 真酒馆验收：ILB 角色卡兼容 0.1.0
+// tests/live/st-v01-check.mjs —— 真酒馆验收：ILB 角色卡兼容 0.1.1
 //
 // 覆盖：
 //   1) 扩展加载、设置页卡片、面板三个页签都能渲染；
@@ -75,6 +75,26 @@ const out = await page.evaluate(`(async () => {
     const character = app.currentCharacter();
     r.hasCharacter = !!character?.avatar;
     if (!character?.avatar) throw new Error('当前没有角色卡，探针需要一张真实角色卡才能验关联');
+
+    // ---- 面板开关：关掉之后必须真的从页面上消失（v0.1.1 修）----
+    cc.open('bindings');
+    await sleep(500);
+    cc.close();
+    await sleep(400);
+    const closedDialog = document.querySelector('.ilbcc-dialog');
+    r.dialogClosedHidden = !!closedDialog && closedDialog.open === false && getComputedStyle(closedDialog).display === 'none';
+
+    // ---- 导入导出页：进了聊天就要认得出角色，导入要有能点的按钮（v0.1.1 修）----
+    cc.open('package');
+    await sleep(2000);
+    const pkgBody = document.querySelector('.ilbcc-body');
+    const pkgText = pkgBody?.textContent ?? '';
+    r.packageSeesCharacter = pkgText.includes(character.avatar);
+    r.packageHasImportButton = [...(pkgBody?.querySelectorAll('button') ?? [])].some((button) =>
+      (button.textContent ?? '').includes('选择包文件'),
+    );
+    cc.open('bindings');
+    await sleep(400);
 
     // ---- 造一本探针书（走 ILB 公开接口）+ 一条关联 ----
     const bookId = 'probe-ilbcc-b1';
@@ -169,7 +189,7 @@ const failed = rows.filter(([key, value]) => {
   if (typeof value === 'string') return false; // 版本号/文件名这类是信息，不是判定项
   return value !== true;
 });
-console.log('— ILB 角色卡兼容 0.1.0 真机检查 —');
+console.log('— ILB 角色卡兼容 0.1.1 真机检查 —');
 for (const [key, value] of rows) console.log(`${value === true || typeof value === 'string' ? '✓' : '✗'} ${key}: ${String(value)}`);
 if (out.error) console.log(`✗ error: ${out.error}`);
 if (out.cleanupCardError) console.log(`! 清理角色卡失败：${out.cleanupCardError}`);
@@ -179,5 +199,5 @@ if (failed.length > 0 || out.error) {
   page.close();
   process.exit(1);
 }
-console.log('\n✅ v0.1 角色卡兼容检查通过');
+console.log('\n✅ v0.1.1 角色卡兼容检查通过');
 page.close();

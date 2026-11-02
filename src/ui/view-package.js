@@ -16,14 +16,36 @@ const ACTION_LABEL = {
 };
 
 export function createPackageView({ app }) {
-  let exportModel = null; // {character, books:[...]}
+  let exportModel = null; // { avatar, ok, character, books, message }
   let exportBusy = false;
+  let exportLoading = null; // 正在读清单的 Promise（避免同一帧发两次请求）
   let importState = null; // {pkg, preview, decisions:{}}
   let importBusy = false;
+  let importFileName = '';
 
   // ---------- 导出 ----------
 
-  function renderExport(root) {
+  function currentAvatar() {
+    try {
+      return String(app.currentCharacter()?.avatar ?? '');
+    } catch {
+      return '';
+    }
+  }
+
+  function noCharacterMessage() {
+    let group = false;
+    try {
+      group = app.access?.isGroup?.() === true;
+    } catch {
+      group = false;
+    }
+    return group
+      ? '现在是群聊。群聊里没有「当前角色」，这一页只能按单张角色卡导出：先切到一张角色卡，再回来。'
+      : '还没打开角色卡。先在酒馆里点开一张角色卡，再回来看这一页（也可以点下面的「重新检查」）。';
+  }
+
+  function renderExport() {
     const section = el('div', { class: 'ilbcc-section' });
     section.append(el('div', { class: 'ilbcc-section-title', text: '导出角色卡包' }));
 
@@ -33,6 +55,13 @@ export function createPackageView({ app }) {
     }
     if (!exportModel.ok) {
       section.append(el('p', { class: 'ilbcc-hint', text: exportModel.message ?? '当前没有可导出的角色' }));
+      section.append(
+        el(
+          'div',
+          { class: 'ilbcc-actions' },
+          el('button', { class: 'ilbcc-btn', type: 'button', text: '重新检查', onclick: () => reloadExport() }),
+        ),
+      );
       return section;
     }
 
@@ -41,7 +70,7 @@ export function createPackageView({ app }) {
     if (exportModel.books.length === 0) {
       section.append(hint('这个角色还没有关联任何书。先去「关联」页签加书，再来导出。'));
       section.append(
-        el('button', { class: 'ilbcc-btn', type: 'button', text: '刷新', onclick: () => reloadExport() }),
+        el('button', { class: 'ilbcc-btn', type: 'button', text: '重新检查', onclick: () => reloadExport() }),
       );
       return section;
     }
@@ -136,38 +165,61 @@ export function createPackageView({ app }) {
     await app.refreshViews();
   }
 
-  /** 第一次打开（或点了刷新）时，把导出清单读出来 */
+  /**
+   * 读导出清单。
+   * 每次都重读，不留缓存：以前把「没有角色」的结论缓存住了，用户进聊天之后这一页仍然
+   * 说没有角色（v0.1.1 修的 bug）。代价只是一次 /api/characters/get + 一次本地关联查询。
+   */
   async function ensureExportModel() {
-    if (exportModel) return;
-    const character = app.currentCharacter();
-    if (!character?.avatar) {
-      exportModel = { ok: false, message: '当前没有角色（群聊或未进入聊天），先打开一张角色卡再导出。' };
+    if (exportLoading) return exportLoading;
+    const avatar = currentAvatar();
+    if (!avatar) {
+      exportModel = { avatar: '', ok: false, message: noCharacterMessage() };
       return;
     }
-    try {
-      exportModel = await app.exporter.plan(character.avatar);
-    } catch (err) {
-      exportModel = { ok: false, message: `读取关联失败：${err?.message ?? err}` };
-    }
+    exportLoading = (async () => {
+      try {
+        const model = await app.exporter.plan(avatar);
+        exportModel = { ...model, avatar };
+      } catch (err) {
+        exportModel = { avatar, ok: false, message: `读取关联失败：${err?.message ?? err}` };
+      } finally {
+        exportLoading = null;
+      }
+    })();
+    return exportLoading;
   }
 
   // ---------- 导入 ----------
 
-  function renderImport(root) {
+  function renderImport() {
     const section = el('div', { class: 'ilbcc-section' });
     section.append(el('div', { class: 'ilbcc-section-title', text: '导入角色卡包' }));
 
+    // 酒馆的全局样式把 input[type=file] 直接藏了（display:none），手机上就只剩一行字、
+    // 看不到任何按钮；所以真正的入口自己画，input 只负责弹文件选择框（v0.1.1 修）。
     const fileInput = el('input', {
       type: 'file',
       accept: '.json,.ilbchar.json,application/json',
-      class: 'ilbcc-file',
+      class: 'ilbcc-file-hidden',
       onchange: async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
+        importFileName = String(file.name ?? '');
         await inspect(file);
       },
     });
-    section.append(el('div', { class: 'ilbcc-actions' }, fileInput));
+    const pickButton = el('button', {
+      class: 'ilbcc-btn primary',
+      type: 'button',
+      text: '选择包文件…',
+      onclick: () => fileInput.click(),
+    });
+    const pickLabel = el('span', {
+      class: 'ilbcc-hint',
+      text: importFileName ? `已选：${importFileName}` : '还没有选文件',
+    });
+    section.append(el('div', { class: 'ilbcc-actions' }, pickButton, pickLabel), fileInput);
 
     if (!importState) {
       section.append(hint('选一个 .ilbchar.json 文件。会先检查格式与书，再让你确认，最后才真的导入。'));
@@ -309,9 +361,11 @@ export function createPackageView({ app }) {
     name: 'package',
     async render(root) {
       clear(root);
+      root.append(el('div', { class: 'ilbcc-loading', text: '正在读当前角色与关联…' }));
       await ensureExportModel();
-      root.append(renderExport(root));
-      root.append(renderImport(root));
+      clear(root);
+      root.append(renderExport());
+      root.append(renderImport());
     },
   };
 }

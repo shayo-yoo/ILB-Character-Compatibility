@@ -137,11 +137,20 @@ core/* ──> 无依赖
 `exporter.plan(avatar)` → `exporter.run({avatar, bookIds})`：
 取全量卡 → 逐本 `ILB.worldbooks.exportBook` → **任一失败即整体取消** → 取原生 V2 JSON → `buildPackage` → 下载。
 
+界面每次渲染都重读 `plan()`，不缓存结论：缓存过「没有角色」会让用户进了聊天之后仍然看到这句话（0.1.1 修）。
+
 ### 7.3 导入
 
 `importer.plan(pkg)` → `importer.run(pkg, {decisions})`：
 逐本 `worldbooks.importBook`（默认 `ask` 由界面决定：skip / overwrite / create / reuse）→
 **有书失败就停** → `cards.importJson`（不传 preserved_name）→ 用新 avatar + 新 book id 建关联 → 校验并报告。
+
+### 7.4 两条界面约定（踩过坑）
+
+- **`<dialog>` 关闭必须真的不显示**：作者样式里的 `display:flex` 会盖过浏览器对 `dialog:not([open])` 的 `display:none`，
+  结果关掉的面板还按普通元素排版、被聊天窗口盖住。`style.css` 里默认 `display:none`，只在 `[open]` 时 `flex`。
+- **不要直接用 `<input type="file">` 当按钮**：酒馆全局样式把它设成 `display:none`，手机上什么都看不到。
+  用自绘按钮调 `input.click()`，input 自己隐藏。
 
 ## 8. 扩展点
 

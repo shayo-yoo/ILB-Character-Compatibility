@@ -42,6 +42,8 @@
   color: #c98a2b;
 }
 
+/* 关闭状态必须是 display:none —— 浏览器自带的 dialog 规则优先级低于作者样式，
+   这里若直接写 display:flex，关掉之后对话框仍在页面上占位置、被聊天窗口盖住（v0.1.1 修） */
 .ilbcc-dialog {
   width: min(880px, 94vw);
   max-height: 86vh;
@@ -50,13 +52,21 @@
   border: 1px solid var(--SmartThemeBorderColor, rgba(255, 255, 255, 0.2));
   background: var(--SmartThemeBlurTintColor, #1d1d1f);
   color: var(--SmartThemeBodyColor, #eaeaea);
-  display: flex;
+  display: none;
   flex-direction: column;
   overflow: hidden;
 }
 
 .ilbcc-dialog[open] {
   display: flex;
+}
+
+.ilbcc-dialog:not([open]) {
+  display: none !important;
+}
+
+.ilbcc-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
 }
 
 .ilbcc-head {
@@ -321,8 +331,9 @@
   overflow: auto;
 }
 
-.ilbcc-file {
-  font-size: 0.9em;
+/* input[type=file] 会被酒馆的全局样式藏起来，所以真正用来点的是我们自己画的按钮 */
+.ilbcc-file-hidden {
+  display: none;
 }
 
 /* 手机：一行放不下就竖着排 */
