@@ -249,8 +249,20 @@
 }
 
 .ilbcc-add-bar .ilbcc-select {
-  flex: 1 1 150px;
   min-width: 0;
+}
+
+/* 添加关联：书名是主要定位字段，启用模式保持紧凑但不可被挤成窄条。 */
+.ilbcc-add-bar .ilbcc-book-search {
+  flex: 1 1 220px;
+}
+
+.ilbcc-add-bar .ilbcc-book-select {
+  flex: 2 1 280px;
+}
+
+.ilbcc-add-bar .ilbcc-policy-select {
+  flex: 1 1 190px;
 }
 
 .ilbcc-check-list {

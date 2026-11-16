@@ -25,11 +25,46 @@ export function createBindingsView({ app }) {
     const candidates = books.filter((book) => !bound.has(String(book.id)));
     if (candidates.length === 0) return hint('ILB 里没有别的书可以关联了（或者还没有书）。');
 
-    const select = el('select', { class: 'ilbcc-select' });
+    const select = el('select', { class: 'ilbcc-select ilbcc-book-select' });
+    const options = [];
     for (const book of candidates) {
-      select.append(option(String(book.id), `${book.name}${Number(book.entries) ? `（${book.entries} 条）` : ''}`));
+      const item = option(String(book.id), `${book.name}${Number(book.entries) ? `（${book.entries} 条）` : ''}`);
+      options.push({ item, book });
+      select.append(item);
     }
-    const policy = el('select', { class: 'ilbcc-select' }, option('auto', POLICY_LABEL.auto, true), option('on', POLICY_LABEL.on), option('off', POLICY_LABEL.off));
+
+    // 搜索只作用于“添加关联”的候选书，不筛选已添加关联列表。
+    const search = el('input', {
+      class: 'ilbcc-input ilbcc-book-search',
+      type: 'search',
+      placeholder: '搜索要添加的世界书',
+      'aria-label': '搜索要添加的世界书',
+    });
+    let searchTimer = 0;
+    const applySearch = (value) => {
+      const query = String(value ?? '').trim().toLowerCase();
+      let visible = 0;
+      for (const { item, book } of options) {
+        const show = !query || String(book.name ?? '').toLowerCase().includes(query);
+        item.hidden = !show;
+        item.disabled = !show;
+        if (show) visible += 1;
+      }
+      select.disabled = visible === 0;
+      if (typeof add !== 'undefined') add.disabled = visible === 0 || busy;
+    };
+    search.addEventListener('input', (event) => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => applySearch(event.target.value), 150);
+    });
+    search.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        clearTimeout(searchTimer);
+        applySearch(event.target.value);
+      }
+    });
+
+    const policy = el('select', { class: 'ilbcc-select ilbcc-policy-select' }, option('auto', POLICY_LABEL.auto, true), option('on', POLICY_LABEL.on), option('off', POLICY_LABEL.off));
     const add = el('button', {
       class: 'ilbcc-btn primary',
       type: 'button',
@@ -49,7 +84,7 @@ export function createBindingsView({ app }) {
         }
       },
     });
-    return el('div', { class: 'ilbcc-add-row' }, select, policy, add);
+    return el('div', { class: 'ilbcc-add-row' }, search, select, policy, add);
   }
 
   function rowView(bookByIndex, row) {
@@ -154,10 +189,8 @@ export function createBindingsView({ app }) {
           }),
         ),
       );
-      // 上面这些（当前角色 + 关联列表）放进独立的滚动区，添加栏单独占一块。
-      // v0.1.2：书多的时候列表会把添加栏推到屏幕外，用户得先滚到底才能加关联。
-      // 做法不是给添加栏加 sticky（内容短的时候它会浮在中间），而是让整页变成
-      // 「上面滚动、下面固定」的两段式：列表再长也只在自己的区域里滚。
+      root.append(header);
+
       const list = el('div', { class: 'ilbcc-section' });
       list.append(el('div', { class: 'ilbcc-section-title', text: `关联的书（${listed.rows.length}）` }));
       if (listed.rows.length === 0) {
@@ -173,15 +206,9 @@ export function createBindingsView({ app }) {
         for (const row of listed.rows) index.set(row.id, row);
         for (const row of listed.rows) list.append(rowView(index, row));
       }
+      root.append(list);
 
-      // 上面这些（当前角色 + 关联列表）放进独立的滚动区，添加栏单独占一块。
-      // v0.1.2：书多的时候列表会把添加栏推到屏幕外，用户得先滚到底才能加关联。
-      // 做法不是给添加栏加 sticky（内容短的时候它会浮在中间），而是让整页变成
-      // 「上面滚动、下面固定」的两段式：列表再长也只在自己的区域里滚。
-      root.append(el('div', { class: 'ilbcc-bind-scroll' }, header, list));
-
-      const add = el('div', { class: 'ilbcc-add-bar' });
-      root.classList.add('ilbcc-has-add-bar');
+      const add = el('div', { class: 'ilbcc-section' });
       add.append(el('div', { class: 'ilbcc-section-title', text: '添加关联' }));
       add.append(bookPicker(books, listed.rows, (bookId, policy) => app.bindings.add({ character, bookId, policy })));
       add.append(hint('「跟随书设置」= 书自己的策略说了算；「强制启用/停用」= 只要这个角色在，就以这里为准。'));
